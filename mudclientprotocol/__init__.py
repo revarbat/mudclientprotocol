@@ -109,6 +109,7 @@ class McpPackage(object):
         self.name = name
         self.minver = minver
         self.maxver = maxver
+        self.context = None
         self.connection = None
         self.negotiated_version = None
         registered_packages[name] = self
@@ -260,11 +261,12 @@ class McpConnection(object):
         if self.is_server:
             self.write_cb('#$#mcp version: 2.1 to: 2.1')
 
-    def process_input(self, line):
+    def process_input(self, line, context=None):
         if line.startswith('#$"'):
             return line[3:]
         if line.startswith('#$#'):
             msg = self.parse_line(line)
+            msg.context = context
             if msg.name == 'mcp':
                 self._negotiate_startup(msg)
                 return None
@@ -381,5 +383,10 @@ class McpConnection(object):
                 return None
         return None
 
+    def supports_package(self, pkgname):
+        if pkgname not in self.supported_packages:
+            return None
+        pkg = self.supported_packages[pkgname]
+        return pkg.negotiated_version
 
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4 nowrap
